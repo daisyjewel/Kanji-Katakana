@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flashcard & Latihan Kanji Desy</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f5f6fa; padding: 20px; }
+        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: inline-block; min-width: 320px; }
+        #kanji-soal { font-size: 90px; margin: 10px 0; color: #2f3640; font-weight: bold; }
+        
+        /* Kotak Rahasia / Informasi Cara Baca */
+        .kotak-rahasia { background: #f1f2f6; padding: 15px; border-radius: 10px; margin: 15px 0; display: none; border-left: 5px solid #00a8ff; text-align: left; }
+        .kotak-rahasia p { margin: 5px 0; font-size: 16px; color: #57606f; }
+        .kotak-rahasia b { color: #2f3640; }
+
+        canvas { border: 2px dashed #718093; background: #fff; border-radius: 10px; cursor: crosshair; touch-action: none; margin-top: 10px; }
+        
+        /* Tombol-tombol */
+        button { color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px; font-weight: bold; transition: 0.2s; }
+        .btn-intip { background: #00a8ff; }
+        .btn-intip:hover { background: #0097e6; }
+        .btn-next { background: #4cd137; display: none; }
+        .btn-next:hover { background: #44bd32; }
+        .btn-hapus { background: #718093; padding: 8px 16px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <p style="color: #7f8c8d; margin: 0;">Coba tulis kanji ini di papan, lalu tebak artinya:</p>
+    <div id="kanji-soal">水</div>
+    
+    <!-- Papan Tulis untuk Corat-coret -->
+    <canvas id="canvas" width="280" height="280"></canvas>
+    <br>
+    <button class="btn-hapus" onclick="hapusLayar()">Bersihkan Papan</button>
+    
+    <hr style="border: 0; border-top: 1px solid #dcdde1; margin: 20px 0;">
+
+    <!-- Tombol Aksi -->
+    <button id="btnIntip" class="btn-intip" onclick="bukaRahasia()">👁️ Buka Rahasia (Arti & Baca)</button>
+    <button id="btnNext" class="btn-next" onclick="nextKanji()">Kanji Berikutnya ➡️</button>
+
+    <!-- Tempat Munculnya Jawaban -->
+    <div id="kotakJawaban" class="kotak-rahasia">
+        <p><b>Arti:</b> <span id="text-arti">Air</span></p>
+        <p><b>Kun-yomi (Jepang):</b> <span id="text-kun">みず (mizu)</span></p>
+        <p><b>On-yomi (Cina):</b> <span id="text-on">スイ (sui)</span></p>
+    </div>
+</div>
+
+<script>
+    // Kamu bisa tambah daftar kanji sesukamu di sini!
+    const databaseKanji = [
+        { kanji: '水', arti: 'Air', kun: 'みず (mizu)', on: 'スイ (sui)' },
+        { kanji: '木', arti: 'Pohon / Kayu', kun: 'き (ki)', on: 'モク (moku)' },
+        { kanji: '金', arti: 'Emas / Uang / Hari Jumat', kun: 'かね (kane)', on: 'キン (kin)' },
+        { kanji: '土', arti: 'Tanah / Hari Sabtu', kun: 'つち (tsuchi)', on: 'ド (do)' }
+    ];
+
+    let indeksSekarang = 0;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let melukis = false;
+
+    function bukaRahasia() {
+        // Tampilkan kotak rahasia dan tombol next
+        document.getElementById('kotakJawaban').style.display = 'block';
+        document.getElementById('btnNext').style.display = 'inline-block';
+        document.getElementById('btnIntip').style.display = 'none';
+    }
+
+    function nextKanji() {
+        // Ganti ke kanji berikutnya
+        indeksSekarang = (indeksSekarang + 1) % databaseKanji.length;
+        const data = databaseKanji[indeksSekarang];
+
+        // Update Tampilan
+        document.getElementById('kanji-soal').innerText = data.kanji;
+        document.getElementById('text-arti').innerText = data.arti;
+        document.getElementById('text-kun').innerText = data.kun;
+        document.getElementById('text-on').innerText = data.on;
+
+        // Sembunyikan kembali jawabannya
+        document.getElementById('kotakJawaban').style.display = 'none';
+        document.getElementById('btnNext').style.display = 'none';
+        document.getElementById('btnIntip').style.display = 'inline-block';
+        
+        hapusLayar();
+    }
+
+    // --- LOGIKA UTAMA PAPAN TULIS ( CANVAS ) ---
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#2f3640';
+
+    function mulaiPosisi(e) { melukis = true; gambar(e); }
+    function selesaiPosisi() { melukis = false; ctx.beginPath(); }
+    function gambar(e) {
+        if (!melukis) return;
+        let rect = canvas.getBoundingClientRect();
+        let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        let y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    canvas.addEventListener('mousedown', mulaiPosisi);
+    canvas.addEventListener('mouseup', selesaiPosisi);
+    canvas.addEventListener('mousemove', gambar);
+    canvas.addEventListener('touchstart', mulaiPosisi);
+    canvas.addEventListener('touchend', selesaiPosisi);
+    canvas.addEventListener('touchmove', gambar);
+
+    function hapusLayar() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+</script>
+
+</body>
+</html>

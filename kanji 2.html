@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f8f9fa; padding: 20px; }
+    .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; min-width: 300px; }
+    #huruf-soal { font-size: 80px; margin: 20px 0; color: #2c3e50; }
+    input { padding: 10px; font-size: 18px; border: 2px solid #ddd; border-radius: 8px; width: 80%; outline: none; }
+    input:focus { border-color: #3498db; }
+    .pesan { margin-top: 15px; font-weight: bold; }
+    #area-menulis { display: none; margin-top: 20px; }
+    canvas { border: 2px dashed #ff4757; background: #fff; border-radius: 10px; cursor: crosshair; touch-action: none; }
+    button { background: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+    .btn-hapus { background: #e74c3c; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Tebak Huruf! 🇯🇵</h2>
+    <div id="huruf-soal">火</div>
+    
+    <div id="area-tebak">
+      <input type="text" id="input-jawaban" placeholder="Ketik artinya (misal: api)...">
+      <div id="feedback" class="pesan"></div>
+    </div>
+
+    <!-- Bagian ini muncul HANYA kalau jawaban salah -->
+    <div id="area-menulis">
+      <p style="color: #e74c3c;">Salah! Ayo tulis huruf di atas untuk lanjut:</p>
+      <canvas id="canvas" width="250" height="250"></canvas>
+      <br>
+      <button class="btn-hapus" onclick="hapusLayar()">Hapus/Ulang</button>
+      <button onclick="soalBerikutnya()">Sudah Tulis & Lanjut</button>
+    </div>
+  </div>
+
+  <script>
+    // Data sederhana untuk tes awal
+    const daftarSoal = [
+      { huruf: '火', arti: 'api' },
+      { huruf: '水', arti: 'air' },
+      { huruf: '木', arti: 'pohon' },
+      { huruf: '日', arti: 'matahari' }
+    ];
+
+    let indexSekarang = 0;
+    const inputJawaban = document.getElementById('input-jawaban');
+    const feedback = document.getElementById('feedback');
+    const areaMenulis = document.getElementById('area-menulis');
+    const areaTebak = document.getElementById('area-tebak');
+    const hurufSoal = document.getElementById('huruf-soal');
+
+    // Deteksi Enter di Input
+    inputJawaban.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        cekJawaban();
+      }
+    });
+
+    function cekJawaban() {
+      const jawabanUser = inputJawaban.value.toLowerCase().trim();
+      const jawabanBenar = daftarSoal[indexSekarang].arti;
+
+      if (jawabanUser === jawabanBenar) {
+        feedback.style.color = '#2ecc71';
+        feedback.innerText = "Pinter! Benar ✅";
+        setTimeout(soalBerikutnya, 1000);
+      } else {
+        feedback.style.color = '#e74c3c';
+        feedback.innerText = `Salah! Jawaban benar: ${jawabanBenar}.`;
+        munculkanPapanTulis();
+      }
+    }
+
+    function munculkanPapanTulis() {
+      areaTebak.style.display = 'none';
+      areaMenulis.style.display = 'block';
+    }
+
+    function soalBerikutnya() {
+      indexSekarang = (indexSekarang + 1) % daftarSoal.length;
+      hurufSoal.innerText = daftarSoal[indexSekarang].huruf;
+      inputJawaban.value = '';
+      feedback.innerText = '';
+      areaTebak.style.display = 'block';
+      areaMenulis.style.display = 'none';
+      hapusLayar();
+    }
+
+    // --- LOGIKA PAPAN TULIS ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let melukis = false;
+
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#2c3e50';
+
+    function getPos(e) {
+      let rect = canvas.getBoundingClientRect();
+      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function mulai(e) { melukis = true; menggambar(e); }
+    function berhenti() { melukis = false; ctx.beginPath(); }
+    function menggambar(e) {
+      if (!melukis) return;
+      let pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    canvas.addEventListener('mousedown', mulai);
+    canvas.addEventListener('mouseup', berhenti);
+    canvas.addEventListener('mousemove', menggambar);
+    canvas.addEventListener('touchstart', mulai);
+    canvas.addEventListener('touchend', berhenti);
+    canvas.addEventListener('touchmove', menggambar);
+
+    function hapusLayar() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
+
+</body>
+</html>
